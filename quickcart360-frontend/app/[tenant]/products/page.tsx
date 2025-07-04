@@ -32,10 +32,13 @@ export default async function ProductsPage(props:{
     return <div className="p-10 text-red-500">Merchant not found.</div>;
   }
 
+  // Convert merchant.id to a number if it's not already, before using in the query
+  const numericMerchantId = Number(merchant.id); 
+
   const { data: products, error: productsError } = await supabase
     .from('products')
     .select('*')
-    .eq('merchant_id', merchant.id);
+    .eq('merchant_id', numericMerchantId); // Use the converted ID
 
   console.log("HARD-CODED QUERY PRODUCTS:", products);
 
