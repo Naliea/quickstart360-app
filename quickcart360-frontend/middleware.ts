@@ -1,22 +1,38 @@
-import { updateSession } from "@/lib/supabase/middleware";
-import { type NextRequest } from "next/server";
+import { updateSession } from '@/lib/supabase/middleware'
+import { NextRequest, NextResponse } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
-  
-  // Pass tenant ID to downstream components via headers
-  const host = request.headers.get("host") || "";
-  const subdomain = host.split('.')[0];
-  const tenantId = subdomain === 'localhost' ? 'default' : subdomain;
-  
-  response.headers.set("x-tenant-id", tenantId);
-  return response;
-}
+  // Step 1: Handle Supabase session middleware
+  const response = await updateSession(request)
 
+  // Step 2: Extract the subdomain
+  const hostname = request.headers.get('host') || ''
+  const isDev = hostname.includes('localhost')
+
+  let subdomain = ''
+  if (isDev) {
+    // For localhost: e.g. merchant1.localhost:3000
+    subdomain = hostname.split('.')[0]
+  } else {
+    // For production: e.g. merchant1.quickcart.com
+    subdomain = hostname.split('.')[0]
+  }
+
+  // Optional fallback
+  const tenantId = subdomain || 'default'
+
+  // Option 1: Attach to URL (for routing like ?merchant=merchant1)
+  const url = request.nextUrl.clone()
+  url.searchParams.set('merchant', tenantId)
+  const rewritten = NextResponse.rewrite(url, response)
+
+
+
+  return rewritten
+}
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-};
-
+}
 

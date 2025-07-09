@@ -1,72 +1,46 @@
-import { createClient } from '@/lib/supabase/server';
-import { notFound} from 'next/navigation';
+import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
+import { ProductGrid } from "./ProductGrid";
 
-export const dynamic= 'force-dynamic';
-
-
-export default async function ProductsPage(props:{
-  params:Promise<{ tenant: string }>;
-}) {
-  const {tenant} = await props.params;
+export default async function ProductsPage({ params }: { params: { tenant: string } }) {
   const supabase = await createClient();
-  
-  console.log('TENANT:', tenant);
-
-  if (!tenant) {
-    notFound();
-  } 
 
   const { data: merchant, error: merchantError } = await supabase
-    .from('merchants')
-    .select('id, name')
-    .eq('subdomain', tenant)
+    .from("merchants")
+    .select("id, name")
+    .eq("subdomain", params.tenant)
     .single();
 
-  console.log("MERCHANT ID:", merchant.id, typeof merchant.id);
-
-
-  console.log('MERCHANT:', merchant);
-  if (merchantError) console.error('Merchant error:', merchantError); 
-
   if (merchantError || !merchant) {
-    return <div className="p-10 text-red-500">Merchant not found.</div>;
+    notFound();
   }
 
-  // Convert merchant.id to a number if it's not already, before using in the query
-  const numericMerchantId = Number(merchant.id); 
-
   const { data: products, error: productsError } = await supabase
-    .from('products')
-    .select('*')
-    .eq('merchant_id', numericMerchantId); // Use the converted ID
-
-  console.log("HARD-CODED QUERY PRODUCTS:", products);
-
-  console.log('PRODUCTS:', products);
-  if (productsError) console.error('Products error:', productsError);
+    .from("products")
+    .select("id, name, description, price, image_url")
+    .eq("merchant_id", merchant.id);
 
   if (productsError) {
     return <div className="p-10 text-red-500">Error loading products.</div>;
   }
 
   return (
-    <div className="p-10">
-      <h1 className="text-3xl font-bold mb-4">{merchant.name} – Products</h1>
-      {products?.length === 0 ? (
-        <>
-        <p>No products found.</p>
-      <pre>{JSON.stringify(products, null, 2)}</pre></>
-      ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <li key={product.id} className="border p-4 rounded shadow">
-              <h2 className="font-semibold">{product.name}</h2>
-              <p>{product.description}</p>
-              <p className="mt-1 font-bold text-green-600">KES {product.price}</p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <div className="min-h-screen flex flex-col">
+  <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto">
+    <h1 className="text-4xl font-extrabold mb-2 text-gray-900">
+      Fall Products 🍂
+    </h1>
+    <p className="text-gray-600 mb-8">
+      Browse all your seasonal fall clothings here. Where fall is not just a season but a way of life.
+    </p>
+
+    <ProductGrid products={products} />
+  </main>
+
+  <footer className="text-center text-gray-500 py-4 border-t text-sm">
+    © {new Date().getFullYear()} {merchant.name}
+  </footer>
+</div>
+
   );
 }

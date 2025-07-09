@@ -33,13 +33,35 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
+      if (signInError) throw signInError;
+
+      // Get the authenticated user
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+      if (userError || !user) throw userError || new Error("User not found");
+
+      const userId = user.id;
+
+      // Query the tenant_slug from your profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("tenant_slug")
+        .eq("id", userId)
+        .single();
+
+      if (profileError || !profile) {
+        throw profileError || new Error("Tenant not found for this user");
+      }
+
+      const tenantSlug = profile.tenant_slug;
+
+      router.push(`/${tenantSlug}/protected`);
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

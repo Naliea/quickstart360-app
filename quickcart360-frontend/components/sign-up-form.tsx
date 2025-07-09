@@ -1,3 +1,5 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function SignUpForm({
@@ -24,6 +26,10 @@ export function SignUpForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // ✅ Get merchant/tenant from URL
+  const tenantSlug = searchParams.get("merchant") || "quickmart";
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,17 +44,41 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/auth/confirm?type=signup&next=/${tenantSlug}/protected`,
+          data: {
+            tenant_slug: tenantSlug,
+          },
         },
       });
+
       if (error) throw error;
+
+      const user = data.user;
+      if (!user) throw new Error("User not returned from sign-up.");
+
+      // ✅ Insert into `profiles` table
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: user.id,
+        tenant_slug: tenantSlug,
+        email: user.email,
+      });
+
+      if (profileError) throw profileError;
+
       router.push("/auth/sign-up-success");
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+    } catch (error: any) {
+      console.error("Full error:", JSON.stringify(error, null, 2));
+      if (error?.message) {
+        setError(error.message);
+      } else if (typeof error === "object") {
+        setError("Unknown error: " + JSON.stringify(error));
+      } else {
+        setError("An unknown error occurred");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -76,9 +106,7 @@ export function SignUpForm({
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -88,9 +116,7 @@ export function SignUpForm({
                 />
               </div>
               <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
-                </div>
+                <Label htmlFor="repeat-password">Repeat Password</Label>
                 <Input
                   id="repeat-password"
                   type="password"

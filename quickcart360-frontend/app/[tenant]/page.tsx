@@ -37,3 +37,4 @@ export default async function TenantHomepage({
     </main>
   );
 }
+//Style this page more:display all t

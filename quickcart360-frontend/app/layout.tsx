@@ -20,10 +20,10 @@ const geistSans = Geist({
 });
 
 export default function RootLayout({
-  children,
-}: Readonly<{
+  children
+}:{
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.className} antialiased`}>
