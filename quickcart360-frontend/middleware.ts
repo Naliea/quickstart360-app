@@ -19,11 +19,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Optional fallback
-  const tenantId = subdomain || 'default'
+  const tenant_slug = subdomain || 'default'
 
   // Option 1: Attach to URL (for routing like ?merchant=merchant1)
   const url = request.nextUrl.clone()
-  url.searchParams.set('merchant', tenantId)
+  url.searchParams.set('profile', tenant_slug)
   const rewritten = NextResponse.rewrite(url, response)
 
 

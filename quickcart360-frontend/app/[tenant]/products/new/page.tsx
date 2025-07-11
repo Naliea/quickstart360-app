@@ -231,7 +231,7 @@ export default function AddProductPage() {
 
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition disabled:opacity-50 flex justify-center items-center"
+          className="w-full bg-green-600 hover:bg-gray-700 text-white py-2 px-4 rounded-full transition disabled:opacity-50 flex justify-center items-center"
           disabled={loading}
         >
           {loading ? (

@@ -1,3 +1,4 @@
+// components/SignUpForm.tsx
 "use client";
 
 import { cn } from "@/lib/utils";
@@ -13,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function SignUpForm({
@@ -26,10 +27,6 @@ export function SignUpForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // ✅ Get merchant/tenant from URL
-  const tenantSlug = searchParams.get("merchant") || "quickmart";
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,10 +45,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm?type=signup&next=/${tenantSlug}/protected`,
-          data: {
-            tenant_slug: tenantSlug,
-          },
+          emailRedirectTo: `${window.location.origin}/setUp`,
         },
       });
 
@@ -60,25 +54,16 @@ export function SignUpForm({
       const user = data.user;
       if (!user) throw new Error("User not returned from sign-up.");
 
-      // ✅ Insert into `profiles` table
-      const { error: profileError } = await supabase.from("profiles").insert({
+      await supabase.from("profiles").insert({
         id: user.id,
-        tenant_slug: tenantSlug,
         email: user.email,
+        role: null,
+        tenant_slug: null,
       });
-
-      if (profileError) throw profileError;
 
       router.push("/auth/sign-up-success");
     } catch (error: any) {
-      console.error("Full error:", JSON.stringify(error, null, 2));
-      if (error?.message) {
-        setError(error.message);
-      } else if (typeof error === "object") {
-        setError("Unknown error: " + JSON.stringify(error));
-      } else {
-        setError("An unknown error occurred");
-      }
+      setError(error?.message || "An unknown error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -92,49 +77,25 @@ export function SignUpForm({
           <CardDescription>Create a new account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="repeat-password">Repeat Password</Label>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating an account..." : "Sign up"}
-              </Button>
+          <form onSubmit={handleSignUp} className="flex flex-col gap-6">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
-            <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
-                Login
-              </Link>
+            <div className="grid gap-2">
+              <Label htmlFor="password">Password</Label>
+              <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="repeat-password">Repeat Password</Label>
+              <Input id="repeat-password" type="password" required value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} />
+            </div>
+            {error && <p className="text-sm text-red-500">{error}</p>}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Creating an account..." : "Sign up"}
+            </Button>
+            <div className="text-center text-sm mt-4">
+              Already have an account? <Link href="/auth/login" className="underline">Login</Link>
             </div>
           </form>
         </CardContent>
