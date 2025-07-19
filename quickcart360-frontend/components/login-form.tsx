@@ -33,11 +33,14 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (signInError) throw signInError;
+
+      const accessToken = signInData.session?.access_token;
+      console.log("🔐 ACCESS TOKEN:", accessToken); // You’ll copy this from the browser console
 
       // Get the authenticated user
       const {
@@ -51,17 +54,23 @@ export function LoginForm({
       // Query the tenant_slug from your profiles table
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("tenant_slug")
+        .select("role, tenant_slug")
         .eq("id", userId)
         .single();
 
       if (profileError || !profile) {
         throw profileError || new Error("Tenant not found for this user");
       }
+      if (profile.role === "customer") {
+        router.push("/store/explore");
 
-      const tenantSlug = profile.tenant_slug;
-
-      router.push(`/${tenantSlug}/protected`);
+      } else if (profile.role === "merchant") {
+       if (!profile.tenant_slug) throw new Error("Missing tenant slug");
+        router.push(`/${profile.tenant_slug}/protected`);
+      } else {
+      throw new Error("Unknown role");
+      }
+    
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {

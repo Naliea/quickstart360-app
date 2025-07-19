@@ -127,7 +127,11 @@ export default function AddProductPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-md mt-8">
+      <div
+    className="min-h-screen bg-cover bg-center flex items-center justify-center"
+    style={{ backgroundImage: "url('/brownwallpaper.jpg')" }}
+  >
+    <div className="max-w-xl mx-auto p-6 bg-yellow-10 rounded-lg shadow-md mt-8">
       <h1 className="text-3xl font-bold mb-4 text-center text-gray-800">
         Add New Product
       </h1>
@@ -231,7 +235,7 @@ export default function AddProductPage() {
 
         <button
           type="submit"
-          className="w-full bg-green-600 hover:bg-gray-700 text-white py-2 px-4 rounded-full transition disabled:opacity-50 flex justify-center items-center"
+          className="w-full bg-gray-300 hover:bg-gray-700 text-white py-2 px-4 rounded-full transition disabled:opacity-50 flex justify-center items-center"
           disabled={loading}
         >
           {loading ? (
@@ -242,5 +246,6 @@ export default function AddProductPage() {
         </button>
       </form>
     </div>
+  </div>
   );
 }

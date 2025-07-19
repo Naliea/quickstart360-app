@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-
 export default function SetupPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -29,7 +28,6 @@ export default function SetupPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // ✅ Fetch authenticated user and profile
   useEffect(() => {
     async function fetchUser() {
       const {
@@ -45,6 +43,14 @@ export default function SetupPage() {
     fetchUser();
   }, []);
 
+  const getSubdomain = (): string | null => {
+    if (typeof window === "undefined") return null;
+    const host = window.location.host;
+    const parts = host.split(".");
+    if (parts.length < 3) return null;
+    return parts[0];
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -53,6 +59,8 @@ export default function SetupPage() {
     try {
       if (!userId || !userEmail) throw new Error("User not authenticated.");
       if (!role) throw new Error("Please select a role.");
+
+      const currentSubdomain = getSubdomain();
 
       if (role === "merchant") {
         if (!storeName || !storeSlug) {
@@ -86,18 +94,23 @@ export default function SetupPage() {
           .eq("id", userId);
 
         if (profileUpdateError) throw profileUpdateError;
-      } else if (role === "customer") {
-        // Update profile with role only
+
+        router.push(`/${storeSlug}/protected`);
+      }
+
+      if (role === "customer") {
         const { error: profileUpdateError } = await supabase
           .from("profiles")
-          .update({ role: "customer" })
+          .update({
+            role: "customer",
+            tenant_slug: currentSubdomain ?? null,
+          })
           .eq("id", userId);
 
         if (profileUpdateError) throw profileUpdateError;
-      }
 
-      // Redirect to login after setup
-      router.push("/auth/login");
+        router.push("store/explore"); // ✅ Customer lands on public marketplace
+      }
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {

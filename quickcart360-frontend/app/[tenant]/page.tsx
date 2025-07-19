@@ -1,7 +1,6 @@
 // app/(dashboard)/about/page.tsx
 import { createClient } from '@/lib/supabase/server';
-import { PageEditor } from "@/app/[tenant]/PageEditor/page";
-import { PageViewer } from "@/app/[tenant]/PageViewer/page";
+
 
 export default async function AboutPage() {
   const supabase =await  createClient();
